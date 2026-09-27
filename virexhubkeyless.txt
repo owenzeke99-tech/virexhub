@@ -1,0 +1,244 @@
+-- Correct Key Definition
+local CORRECT_KEY = "VirexhubKeyHdowheHsiskkwoNsjsoowjeeiMalwpjejdkd"
+local SAVE_FILE_NAME = "VirexHub_KeyData.json"
+
+-- Helper functions for saving key with 24-hour expiration
+local function isKeyValid()
+    if not (writefile and readfile and isfile and delfile) then return false end
+    if isfile(SAVE_FILE_NAME) then
+        local success, data = pcall(function()
+            return game:GetService("HttpService"):JSONDecode(readfile(SAVE_FILE_NAME))
+        end)
+        if success and data and data.key == CORRECT_KEY then
+            -- Check if 24 hours (86400 seconds) have not passed
+            if os.time() - data.timestamp < 86400 then
+                return true
+            else
+                delfile(SAVE_FILE_NAME) -- Expired, delete old file
+            end
+        end
+    end
+    return false
+end
+
+local function saveKey()
+    if writefile then
+        local data = {
+            key = CORRECT_KEY,
+            timestamp = os.time()
+        }
+        pcall(function()
+            writefile(SAVE_FILE_NAME, game:GetService("HttpService"):JSONEncode(data))
+        end)
+    end
+end
+
+-- If key was already successfully entered and is still within 24 hours, bypass UI and load script directly
+if isKeyValid() then
+    loadstring(game:HttpGet("https://gist.githubusercontent.com/virexx55/836653079c73281295d6bfb5c10be5d9/raw/128b0220c9a36354b5c6504c3669f328e5354805/virex.lua"))()
+    return
+end
+
+-- Roblox Services
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Remove previous UI if exists
+if CoreGui:FindFirstChild("VirexKeySystem") then
+    CoreGui.VirexKeySystem:Destroy()
+end
+
+-- Create Main ScreenGui (No dark background overlay)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "VirexKeySystem"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Menu Frame (Dark Navy/Slate Blue)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 420, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -120)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 23, 42)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+-- Subtle glowing border
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(239, 68, 68) -- Red accent
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.5
+MainStroke.Parent = MainFrame
+
+-- Title: Virex Hub
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 15)
+Title.BackgroundTransparency = 1
+Title.Text = "VIREX HUB"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 24
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 75, 75)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))
+}
+TitleGradient.Rotation = 90
+TitleGradient.Parent = Title
+
+-- SubTitle / Dynamic status message
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Size = UDim2.new(1, 0, 0, 20)
+SubTitle.Position = UDim2.new(0, 0, 0, 50)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Key Authorization System"
+SubTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+SubTitle.TextSize = 13
+SubTitle.Font = Enum.Font.GothamMedium
+SubTitle.Parent = MainFrame
+
+-- Textbox Container
+local TextBoxContainer = Instance.new("Frame")
+TextBoxContainer.Size = UDim2.new(0.85, 0, 0, 45)
+TextBoxContainer.Position = UDim2.new(0.075, 0, 0.40, 0)
+TextBoxContainer.BackgroundColor3 = Color3.fromRGB(30, 41, 59)
+TextBoxContainer.BorderSizePixel = 0
+TextBoxContainer.Parent = MainFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 8)
+BoxCorner.Parent = TextBoxContainer
+
+local BoxStroke = Instance.new("UIStroke")
+BoxStroke.Color = Color3.fromRGB(51, 65, 85)
+BoxStroke.Parent = TextBoxContainer
+
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(1, -20, 1, 0)
+TextBox.Position = UDim2.new(0, 10, 0, 0)
+TextBox.BackgroundTransparency = 1
+TextBox.PlaceholderText = "Enter your key here..."
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.PlaceholderColor3 = Color3.fromRGB(100, 116, 139)
+TextBox.TextSize = 14
+TextBox.Font = Enum.Font.GothamMedium
+TextBox.ClearTextOnFocus = false
+TextBox.Parent = TextBoxContainer
+
+-- Confirm Button (Primary Red)
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Size = UDim2.new(0.41, 0, 0, 42)
+SubmitBtn.Position = UDim2.new(0.075, 0, 0.68, 0)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+SubmitBtn.Text = "CONFIRM"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 14
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.AutoButtonColor = false
+SubmitBtn.Parent = MainFrame
+
+local SubmitCorner = Instance.new("UICorner")
+SubmitCorner.CornerRadius = UDim.new(0, 8)
+SubmitCorner.Parent = SubmitBtn
+
+-- Get Key Button (Slate Navy)
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Size = UDim2.new(0.41, 0, 0, 42)
+GetKeyBtn.Position = UDim2.new(0.515, 0, 0.68, 0)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(51, 65, 85)
+GetKeyBtn.Text = "GET KEY"
+GetKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+GetKeyBtn.TextSize = 14
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.AutoButtonColor = false
+GetKeyBtn.Parent = MainFrame
+
+local GetKeyCorner = Instance.new("UICorner")
+GetKeyCorner.CornerRadius = UDim.new(0, 8)
+GetKeyCorner.Parent = GetKeyBtn
+
+-- Smooth shake effect function
+local function smoothShake()
+    local originalPos = UDim2.new(0.5, -210, 0.5, -120)
+    local duration = 0.35
+    local elapsed = 0
+    
+    local connection
+    connection = RunService.RenderStepped:Connect(function(dt)
+        elapsed = elapsed + dt
+        if elapsed >= duration then
+            MainFrame.Position = originalPos
+            connection:Disconnect()
+        else
+            local intensity = 8 * (1 - (elapsed / duration))
+            local offsetX = math.sin(elapsed * 45) * intensity
+            MainFrame.Position = originalPos + UDim2.new(0, offsetX, 0, 0)
+        end
+    end)
+end
+
+-- Button hover effects
+local function applyHover(btn, originalColor, hoverColor)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
+    end)
+end
+
+applyHover(SubmitBtn, Color3.fromRGB(239, 68, 68), Color3.fromRGB(220, 38, 38))
+applyHover(GetKeyBtn, Color3.fromRGB(51, 65, 85), Color3.fromRGB(71, 85, 105))
+
+-- Get Key functionality (Updated to link4m.org/JfmqeX)
+GetKeyBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://link4m.org/JfmqeX")
+    SubTitle.Text = "✓ Link copied to clipboard!"
+    SubTitle.TextColor3 = Color3.fromRGB(74, 222, 128)
+    task.wait(2)
+    SubTitle.Text = "Key Authorization System"
+    SubTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+end)
+
+-- Confirm / Check Key functionality with 24-hour saving
+SubmitBtn.MouseButton1Click:Connect(function()
+    if TextBox.Text == CORRECT_KEY then
+        saveKey() -- Save key expiration for 24 hours
+        
+        SubTitle.Text = "✓ Success! Opening Hub..."
+        SubTitle.TextColor3 = Color3.fromRGB(74, 222, 128)
+        
+        task.wait(0.6)
+        
+        -- Smooth closing animation
+        local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+        
+        task.wait(0.4)
+        ScreenGui:Destroy()
+        
+        -- Run main script
+        loadstring(game:HttpGet("https://gist.githubusercontent.com/virexx55/836653079c73281295d6bfb5c10be5d9/raw/128b0220c9a36354b5c6504c3669f328e5354805/virex.lua"))()
+    else
+        SubTitle.Text = "✕ Incorrect Key! Please try again."
+        SubTitle.TextColor3 = Color3.fromRGB(239, 68, 68)
+        TextBox.Text = "" -- Automatically clear text on wrong key
+        
+        -- Trigger smooth shake effect
+        smoothShake()
+        
+        task.wait(2)
+        SubTitle.Text = "Key Authorization System"
+        SubTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+    end
+end)
